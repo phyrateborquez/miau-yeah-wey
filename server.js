@@ -35,21 +35,16 @@ app.route('/')
     res.sendFile(process.cwd() + '/views/index.html');
   });
 
-// Backward compatibility for fccTestingRoutes which expects legacy res._headers in Node.js
-app.use((req, res, next) => {
-  res._headers = Object.assign({}, res.getHeaders());
-  next();
-});
-
-// Direct file access routes for FCC test suite
-app.get('/_api/server.js', (req, res) => {
-  res.sendFile(process.cwd() + '/server.js');
-});
-app.get('/_api/public/Player.mjs', (req, res) => {
-  res.type('txt').sendFile(process.cwd() + '/public/Player.mjs');
-});
-app.get('/_api/public/Collectible.mjs', (req, res) => {
-  res.type('txt').sendFile(process.cwd() + '/public/Collectible.mjs');
+// Override /_api/app-info BEFORE fccTestingRoutes to fix Node.js 18+ compatibility
+// (fcctesting.js uses res._headers which was removed in modern Node.js)
+app.get('/_api/app-info', function (req, res) {
+  const headers = res.getHeaders ? res.getHeaders() : (res._headers || {});
+  const hs = Object.keys(headers)
+    .filter(h => !h.match(/^access-control-\w+/));
+  const hObj = {};
+  hs.forEach(h => { hObj[h] = headers[h]; });
+  delete hObj['strict-transport-security'];
+  res.json({ headers: hObj });
 });
 
 // For FCC testing purposes
