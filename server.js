@@ -35,6 +35,23 @@ app.route('/')
     res.sendFile(process.cwd() + '/views/index.html');
   });
 
+// Backward compatibility for fccTestingRoutes which expects legacy res._headers in Node.js
+app.use((req, res, next) => {
+  res._headers = Object.assign({}, res.getHeaders());
+  next();
+});
+
+// Direct file access routes for FCC test suite
+app.get('/_api/server.js', (req, res) => {
+  res.sendFile(process.cwd() + '/server.js');
+});
+app.get('/_api/public/Player.mjs', (req, res) => {
+  res.type('txt').sendFile(process.cwd() + '/public/Player.mjs');
+});
+app.get('/_api/public/Collectible.mjs', (req, res) => {
+  res.type('txt').sendFile(process.cwd() + '/public/Collectible.mjs');
+});
+
 // For FCC testing purposes
 fccTestingRoutes(app);
 
